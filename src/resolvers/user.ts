@@ -6,6 +6,7 @@ import {
   Arg,
   Ctx,
   ObjectType,
+  Query,
 } from "type-graphql";
 import { MyContext } from "src/types";
 import { User } from "../entities/User";
@@ -38,6 +39,17 @@ class UserResponse {
 
 @Resolver()
 export class UserResolver {
+  @Query(() => User, { nullable: true })
+  async me(@Ctx() { req, em }: MyContext) {
+    if (!req.session.userId) {
+      return null;
+    }
+
+    const user = await em.findOne(User, { id: req.session.userId });
+    console.log(user);
+    return user;
+  }
+
   @Mutation(() => UserResponse)
   async register(
     @Arg("input") input: UsernamePasswordInput,
@@ -93,7 +105,7 @@ export class UserResolver {
   @Mutation(() => UserResponse)
   async login(
     @Arg("input") input: UsernamePasswordInput,
-    @Ctx() { em }: MyContext
+    @Ctx() { em, req }: MyContext
   ): Promise<UserResponse> {
     const user = await em.findOne(User, { username: input.username });
     if (!user) {
@@ -107,6 +119,8 @@ export class UserResolver {
         errors: [{ field: "password", message: "unable to login" }],
       };
     }
+
+    req.session.userId = user.id;
 
     return { user };
   }
