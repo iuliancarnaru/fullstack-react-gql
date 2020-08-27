@@ -108,7 +108,7 @@ let UserResolver = class UserResolver {
                 yield em.persistAndFlush(user);
             }
             catch (error) {
-                if (error.code === "23505" || error.detail.includes("already exists")) {
+                if (error.detail.includes("already exists")) {
                     return {
                         errors: [
                             {
