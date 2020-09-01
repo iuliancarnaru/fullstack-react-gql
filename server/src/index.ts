@@ -15,9 +15,12 @@ import connectRedis from "connect-redis";
 import { __prod__, COOKIE_NAME } from "./constants";
 import { MyContext } from "./types";
 import cors from "cors";
+import { sendEmail } from "./utils/sendEmail";
+// import { User } from "./entities/User";
 
 const main = async () => {
   const orm = await MikroORM.init(microConfig);
+  // await orm.em.nativeDelete(User, {});
   await orm.getMigrator().up();
 
   const app = express();

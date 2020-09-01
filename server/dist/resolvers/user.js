@@ -154,6 +154,11 @@ let UserResolver = class UserResolver {
             resolve(true);
         }));
     }
+    forgotPassword(email, { em }) {
+        return __awaiter(this, void 0, void 0, function* () {
+            return true;
+        });
+    }
 };
 __decorate([
     type_graphql_1.Query(() => User_1.User, { nullable: true }),
@@ -185,6 +190,13 @@ __decorate([
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", void 0)
 ], UserResolver.prototype, "logout", null);
+__decorate([
+    type_graphql_1.Mutation(() => Boolean),
+    __param(0, type_graphql_1.Arg("email")), __param(1, type_graphql_1.Ctx()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:returntype", Promise)
+], UserResolver.prototype, "forgotPassword", null);
 UserResolver = __decorate([
     type_graphql_1.Resolver()
 ], UserResolver);
