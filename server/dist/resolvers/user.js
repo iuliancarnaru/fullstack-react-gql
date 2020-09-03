@@ -29,19 +29,8 @@ const type_graphql_1 = require("type-graphql");
 const User_1 = require("../entities/User");
 const argon2_1 = __importDefault(require("argon2"));
 const constants_1 = require("../constants");
-let UsernamePasswordInput = class UsernamePasswordInput {
-};
-__decorate([
-    type_graphql_1.Field(),
-    __metadata("design:type", String)
-], UsernamePasswordInput.prototype, "username", void 0);
-__decorate([
-    type_graphql_1.Field(),
-    __metadata("design:type", String)
-], UsernamePasswordInput.prototype, "password", void 0);
-UsernamePasswordInput = __decorate([
-    type_graphql_1.InputType()
-], UsernamePasswordInput);
+const UsernamePasswordInput_1 = require("./UsernamePasswordInput");
+const validateRegister_1 = require("../utils/validateRegister");
 let FieldError = class FieldError {
 };
 __decorate([
@@ -80,28 +69,13 @@ let UserResolver = class UserResolver {
     }
     register(input, { em, req }) {
         return __awaiter(this, void 0, void 0, function* () {
-            if (input.username.length <= 2) {
-                return {
-                    errors: [
-                        {
-                            field: "username",
-                            message: "length must be greater than 3",
-                        },
-                    ],
-                };
-            }
-            if (input.password.length <= 6) {
-                return {
-                    errors: [
-                        {
-                            field: "password",
-                            message: "length must be greater than 6",
-                        },
-                    ],
-                };
+            const errors = validateRegister_1.validateRegister(input);
+            if (errors) {
+                return { errors };
             }
             const hashedPassword = yield argon2_1.default.hash(input.password);
             const user = em.create(User_1.User, {
+                email: input.email,
                 username: input.username,
                 password: hashedPassword,
             });
@@ -125,15 +99,17 @@ let UserResolver = class UserResolver {
             return { user };
         });
     }
-    login(input, { em, req }) {
+    login(usernameOrEmail, password, { em, req }) {
         return __awaiter(this, void 0, void 0, function* () {
-            const user = yield em.findOne(User_1.User, { username: input.username });
+            const user = yield em.findOne(User_1.User, usernameOrEmail.includes("@")
+                ? { email: usernameOrEmail }
+                : { username: usernameOrEmail });
             if (!user) {
                 return {
                     errors: [{ field: "username", message: "username not found" }],
                 };
             }
-            const validPassword = yield argon2_1.default.verify(user.password, input.password);
+            const validPassword = yield argon2_1.default.verify(user.password, password);
             if (!validPassword) {
                 return {
                     errors: [{ field: "password", message: "unable to login" }],
@@ -172,15 +148,16 @@ __decorate([
     __param(0, type_graphql_1.Arg("input")),
     __param(1, type_graphql_1.Ctx()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [UsernamePasswordInput, Object]),
+    __metadata("design:paramtypes", [UsernamePasswordInput_1.UsernamePasswordInput, Object]),
     __metadata("design:returntype", Promise)
 ], UserResolver.prototype, "register", null);
 __decorate([
     type_graphql_1.Mutation(() => UserResponse),
-    __param(0, type_graphql_1.Arg("input")),
-    __param(1, type_graphql_1.Ctx()),
+    __param(0, type_graphql_1.Arg("usernameOrEmail")),
+    __param(1, type_graphql_1.Arg("password")),
+    __param(2, type_graphql_1.Ctx()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [UsernamePasswordInput, Object]),
+    __metadata("design:paramtypes", [String, String, Object]),
     __metadata("design:returntype", Promise)
 ], UserResolver.prototype, "login", null);
 __decorate([

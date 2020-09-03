@@ -15,3 +15,5 @@ Includes the follow technologies:
 - Next.js
 - TypeGraphQL
 - Chakra
+
+// start postgres : pg_ctl -D /usr/local/var/postgres start

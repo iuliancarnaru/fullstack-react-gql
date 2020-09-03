@@ -1,7 +1,6 @@
 import {
   Resolver,
   Mutation,
-  InputType,
   Field,
   Arg,
   Ctx,
@@ -12,14 +11,8 @@ import { MyContext } from "src/types";
 import { User } from "../entities/User";
 import argon2 from "argon2";
 import { COOKIE_NAME } from "../constants";
-
-@InputType()
-class UsernamePasswordInput {
-  @Field()
-  username: string;
-  @Field()
-  password: string;
-}
+import { UsernamePasswordInput } from "./UsernamePasswordInput";
+import { validateRegister } from "../utils/validateRegister";
 
 @ObjectType()
 class FieldError {
@@ -55,29 +48,13 @@ export class UserResolver {
     @Arg("input") input: UsernamePasswordInput,
     @Ctx() { em, req }: MyContext
   ): Promise<UserResponse> {
-    if (input.username.length <= 2) {
-      return {
-        errors: [
-          {
-            field: "username",
-            message: "length must be greater than 3",
-          },
-        ],
-      };
-    }
-
-    if (input.password.length <= 6) {
-      return {
-        errors: [
-          {
-            field: "password",
-            message: "length must be greater than 6",
-          },
-        ],
-      };
+    const errors = validateRegister(input);
+    if (errors) {
+      return { errors };
     }
     const hashedPassword = await argon2.hash(input.password);
     const user = em.create(User, {
+      email: input.email,
       username: input.username,
       password: hashedPassword,
     });
@@ -105,16 +82,22 @@ export class UserResolver {
 
   @Mutation(() => UserResponse)
   async login(
-    @Arg("input") input: UsernamePasswordInput,
+    @Arg("usernameOrEmail") usernameOrEmail: string,
+    @Arg("password") password: string,
     @Ctx() { em, req }: MyContext
   ): Promise<UserResponse> {
-    const user = await em.findOne(User, { username: input.username });
+    const user = await em.findOne(
+      User,
+      usernameOrEmail.includes("@")
+        ? { email: usernameOrEmail }
+        : { username: usernameOrEmail }
+    );
     if (!user) {
       return {
         errors: [{ field: "username", message: "username not found" }],
       };
     }
-    const validPassword = await argon2.verify(user.password, input.password);
+    const validPassword = await argon2.verify(user.password, password);
     if (!validPassword) {
       return {
         errors: [{ field: "password", message: "unable to login" }],
