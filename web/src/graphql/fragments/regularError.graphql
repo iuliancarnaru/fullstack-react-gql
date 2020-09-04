@@ -1,4 +1,4 @@
 fragment regularError on FieldError {
-  filed
+  field
   message
 }
